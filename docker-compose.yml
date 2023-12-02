@@ -1,0 +1,50 @@
+version: '3.8'
+services:
+  mongodb:
+    image: mongo:6
+    container_name: mongodb
+    ports:
+      - '27017:27017'
+    volumes:
+      - db-data:/data/db
+
+  mongodb_exporter:
+    image: percona/mongodb_exporter:0.40
+    container_name: mongodb_exporter
+    ports:
+      - '9216:9216'
+    environment:
+      MONGODB_URI: mongodb://mongodb_exporter:password@mongodb:27017/?authSource=admin
+    restart: unless-stopped
+    command:
+      - '--collect-all'
+      - '--compatible-mode'
+
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: prometheus
+    ports:
+      - '9090:9090'
+    restart: unless-stopped
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--web.enable-lifecycle'
+      - '--config.file=/etc/prometheus/prometheus.yml'
+
+  grafana:
+    image: grafana/grafana:10.2.2
+    container_name: grafana
+    ports:
+      - '3000:3000'
+    restart: unless-stopped
+    volumes:
+      - grafana-data:/var/lib/grafana
+
+# For other metrics as CPU use https://github.com/prometheus/node_exporter
+
+volumes:
+  db-data: {}
+  prometheus-data: {}
+  grafana-data: {}
